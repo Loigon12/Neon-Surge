@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid Breach | Ultimate Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;700&display=swap');
+        body { font-family: 'Space+Grotesk', sans-serif; background: #020617; overflow: hidden; margin: 0; }
+        canvas { display: block; }
+        .text-outline { -webkit-text-stroke: 1px rgba(6, 182, 212, 0.5); color: transparent; }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+
+    <div id="hud" class="fixed top-0 w-full p-6 flex justify-between items-start z-20 pointer-events-none hidden">
+        <div class="bg-slate-900/80 p-4 rounded-xl border border-cyan-500/20 backdrop-blur-xl">
+            <p class="text-cyan-400 text-[10px] font-bold uppercase tracking-[0.3em] mb-1">Integridad del Sistema</p>
+            <div class="w-48 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div id="hpBar" class="h-full bg-cyan-500 transition-all duration-300" style="width: 100%"></div>
+            </div>
+        </div>
+        <div class="text-right">
+            <p id="levelLabel" class="text-white text-4xl font-black italic leading-none">LVL 1</p>
+            <p id="killsLabel" class="text-cyan-500/60 text-xs font-bold uppercase">Bajas: 0</p>
+        </div>
+    </div>
+
+    <div id="bossHUD" class="fixed top-24 left-1/2 -translate-x-1/2 w-full max-w-xl px-4 transition-all duration-500 opacity-0 pointer-events-none z-20">
+        <div class="flex justify-between items-end mb-1">
+            <span class="text-red-500 font-black tracking-tighter text-lg italic">ANOMALÍA: CORE_OVERLOAD</span>
+            <span id="bossHpPercent" class="text-red-400 text-xs font-mono">100%</span>
+        </div>
+        <div class="h-2 bg-slate-900 border border-red-900/50 rounded-full overflow-hidden shadow-[0_0_20px_rgba(239,68,68,0.2)]">
+            <div id="bossHpBar" class="h-full bg-red-600 w-full transition-all duration-100"></div>
+        </div>
+    </div>
+
+    <div id="menu" class="fixed inset-0 bg-slate-950 flex items-center justify-center z-50">
+        <div class="text-center p-8 border border-white/5 rounded-3xl bg-slate-900/20 backdrop-blur-sm">
+            <h1 class="text-7xl font-black text-white mb-2 tracking-tighter">GRID <span class="text-outline">BREACH</span></h1>
+            <p class="text-slate-500 mb-8 max-w-sm mx-auto uppercase text-[10px] tracking-[0.2em]">Protocolo de limpieza de datos activo</p>
+            <button onclick="initGame()" class="px-12 py-4 bg-cyan-500 hover:bg-white text-black font-bold text-sm uppercase tracking-widest transition-all transform hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(6,182,212,0.3)]">
+                Iniciar Transmisión
+            </button>
+        </div>
+    </div>
+
+    <div id="gameOverMenu" class="fixed inset-0 bg-slate-950/90 flex items-center justify-center z-50 hidden">
+        <div class="text-center p-12 border border-red-500/20 rounded-3xl bg-slate-900/40 backdrop-blur-md">
+            <h2 class="text-6xl font-black text-red-500 mb-2 italic tracking-tighter">SISTEMA CORRUPTO</h2>
+            <p id="finalStats" class="text-slate-400 mb-8 uppercase text-xs tracking-[0.3em]"></p>
+            <button onclick="initGame()" class="px-12 py-4 bg-red-600 hover:bg-white text-white hover:text-black font-bold text-sm uppercase tracking-widest transition-all transform hover:scale-105 active:scale-95">
+                Reiniciar Protocolo
+            </button>
+        </div>
+    </div>
+
+    <canvas id="mainCanvas"></canvas>
+
+    <script>
+        class Vector {
+            constructor(x, y) { this.x = x; this.y = y; }
+            add(v) { this.x += v.x; this.y += v.y; return this; }
+            sub(v) { return new Vector(this.x - v.x, this.y - v.y); }
+            mag() { return Math.sqrt(this.x**2 + this.y**2); }
+            normalize() {
+                const m = this.mag();
+                return m > 0 ? new Vector(this.x / m, this.y / m) : new Vector(0, 0);
+            }
+        }
+
+        class Entity {
+            constructor(x, y, radius, color) {
+                this.pos = new Vector(x, y);
+                this.radius = radius;
+                this.color = color;
+            }
+            draw(ctx) {
+                ctx.beginPath();
+                ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.closePath();
+            }
+        }
+
+        class Player extends Entity {
+            constructor() {
+                super(window.innerWidth / 2, window.innerHeight / 2, 12, '#06b6d4');
+                this.hp = 100;
+                this.speed = 5;
+                this.keys = {};
+                this.activePowerUps = { rapidFire: 0, speed: 0 };
+                this.isShooting = false;
+            }
+            update() {
+                const currentSpeed = this.activePowerUps.speed > 0 ? this.speed * 1.6 : this.speed;
+                let move = new Vector(0, 0);
+                if (this.keys['w']) move.y -= 1;
+                if (this.keys['s']) move.y += 1;
+                if (this.keys['a']) move.x -= 1;
+                if (this.keys['d']) move.x += 1;
+                move = move.normalize();
+                this.pos.x += move.x * currentSpeed;
+                this.pos.y += move.y * currentSpeed;
+
+                if (this.activePowerUps.rapidFire > 0) this.activePowerUps.rapidFire--;
+                if (this.activePowerUps.speed > 0) this.activePowerUps.speed--;
+                
+                // Límites de pantalla
+                this.pos.x = Math.max(this.radius, Math.min(window.innerWidth - this.radius, this.pos.x));
+                this.pos.y = Math.max(this.radius, Math.min(window.innerHeight - this.radius, this.pos.y));
+            }
+        }
+
+        class Enemy extends Entity {
+            constructor(x, y, level) {
+                super(x, y, 10 + Math.random() * 5, '#f43f5e');
+                this.speed = 1.8 + (level * 0.15);
+            }
+            update(target) {
+                const dir = target.pos.sub(this.pos).normalize();
+                this.pos.x += dir.x * this.speed;
+                this.pos.y += dir.y * this.speed;
+            }
+        }
+
+        class Boss extends Enemy {
+            constructor(x, y) {
+                super(x, y, 0);
+                this.radius = 50;
+                this.maxHp = 150;
+                this.hp = this.maxHp;
+                this.isBoss = true;
+                this.speed = 1.4;
+            }
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.pos.x, this.pos.y);
+                ctx.rotate(Date.now() * 0.003);
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(-this.radius, -this.radius, this.radius*2, this.radius*2);
+                ctx.restore();
+                super.draw(ctx);
+            }
+        }
+
+        class Projectile extends Entity {
+            constructor(x, y, targetX, targetY, isSuper) {
+                super(x, y, isSuper ? 6 : 3, isSuper ? '#fbbf24' : '#fff');
+                const dir = new Vector(targetX - x, targetY - y).normalize();
+                this.velocity = new Vector(dir.x * 14, dir.y * 14);
+            }
+            update() { this.pos.add(this.velocity); }
+        }
+
+        class Particle extends Entity {
+            constructor(x, y, color) {
+                super(x, y, Math.random() * 3, color);
+                this.velocity = new Vector((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8);
+                this.alpha = 1;
+            }
+            update() {
+                this.pos.add(this.velocity);
+                this.alpha -= 0.02;
+            }
+            draw(ctx) {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                super.draw(ctx);
+                ctx.restore();
+            }
+        }
+
+        class PowerUp extends Entity {
+            constructor(x, y, type) {
+                const colors = { 'RAPID_FIRE': '#fbbf24', 'SHIELD': '#3b82f6', 'SPEED': '#22c55e' };
+                super(x, y, 8, colors[type]);
+                this.type = type;
+            }
+            draw(ctx) {
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = this.color;
+                super.draw(ctx);
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        let player, enemies, projectiles, powerUps, particles, kills, isRunning, shake, activeBoss, lastFire;
+
+        function initGame() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            player = new Player();
+            enemies = [];
+            projectiles = [];
+            powerUps = [];
+            particles = [];
+            kills = 0;
+            shake = 0;
+            lastFire = 0;
+            activeBoss = null;
+            isRunning = true;
+            
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('gameOverMenu').classList.add('hidden');
+            document.getElementById('bossHUD').classList.replace('opacity-100', 'opacity-0');
+            document.getElementById('hud').classList.remove('hidden');
+            document.getElementById('hpBar').style.width = '100%';
+            updateStats();
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        const mousePos = { x: 0, y: 0 };
+        window.addEventListener('mousemove', (e) => { mousePos.x = e.clientX; mousePos.y = e.clientY; });
+        window.addEventListener('mousedown', () => player.isShooting = true);
+        window.addEventListener('mouseup', () => player.isShooting = false);
+        window.addEventListener('keydown', (e) => player.keys[e.key.toLowerCase()] = true);
+        window.addEventListener('keyup', (e) => player.keys[e.key.toLowerCase()] = false);
+
+        function createExplosion(x, y, color, count = 10) {
+            for(let i=0; i<count; i++) particles.push(new Particle(x, y, color));
+        }
+
+        function gameLoop() {
+            if (!isRunning) return;
+
+            ctx.save();
+            if (shake > 0) {
+                ctx.translate(Math.random() * shake - shake/2, Math.random() * shake - shake/2);
+                shake *= 0.9;
+            }
+
+            ctx.fillStyle = 'rgba(2, 6, 23, 0.4)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Disparo
+            let fireRate = player.activePowerUps.rapidFire > 0 ? 80 : 250;
+            if (player.isShooting && Date.now() - lastFire > fireRate) {
+                projectiles.push(new Projectile(player.pos.x, player.pos.y, mousePos.x, mousePos.y, player.activePowerUps.rapidFire > 0));
+                lastFire = Date.now();
+            }
+
+            // Spawn
+            if (Math.random() < 0.03 && enemies.length < 40 && !activeBoss) spawnEnemy();
+            if (kills > 0 && kills % 50 === 0 && !activeBoss) {
+                activeBoss = new Boss(canvas.width/2, -50);
+                enemies.push(activeBoss);
+                document.getElementById('bossHUD').classList.replace('opacity-0', 'opacity-100');
+            }
+
+            // Actualizar entidades
+            player.update();
+            player.draw(ctx);
+
+            particles.forEach((p, i) => {
+                p.update();
+                p.draw(ctx);
+                if (p.alpha <= 0) particles.splice(i, 1);
+            });
+
+            powerUps.forEach((pu, i) => {
+                pu.draw(ctx);
+                if (pu.pos.sub(player.pos).mag() < pu.radius + player.radius) {
+                    applyPowerUp(pu.type);
+                    powerUps.splice(i, 1);
+                }
+            });
+
+            projectiles.forEach((p, pi) => {
+                p.update();
+                p.draw(ctx);
+                if (p.pos.x < 0 || p.pos.x > canvas.width || p.pos.y < 0 || p.pos.y > canvas.height) projectiles.splice(pi, 1);
+            });
+
+            enemies.forEach((en, ei) => {
+                en.update(player);
+                en.draw(ctx);
+
+                if (en.pos.sub(player.pos).mag() < en.radius + player.radius) {
+                    player.hp -= en.isBoss ? 1 : 0.4;
+                    shake = 8;
+                    document.getElementById('hpBar').style.width = `${player.hp}%`;
+                    if (player.hp <= 0) gameOver();
+                }
+
+                projectiles.forEach((p, pi) => {
+                    if (en.pos.sub(p.pos).mag() < en.radius + p.radius) {
+                        createExplosion(p.pos.x, p.pos.y, en.color, 5);
+                        projectiles.splice(pi, 1);
+                        if (en.isBoss) {
+                            en.hp -= 2;
+                            shake = 12;
+                            updateBossUI(en);
+                            if (en.hp <= 0) defeatBoss(ei);
+                        } else {
+                            if (Math.random() < 0.15) spawnPowerUp(en.pos.x, en.pos.y);
+                            enemies.splice(ei, 1);
+                            kills++;
+                            updateStats();
+                        }
+                    }
+                });
+            });
+
+            ctx.restore();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function spawnEnemy() {
+            const side = Math.floor(Math.random() * 4);
+            let x, y;
+            if (side === 0) { x = Math.random() * canvas.width; y = -50; }
+            else if (side === 1) { x = canvas.width + 50; y = Math.random() * canvas.height; }
+            else if (side === 2) { x = Math.random() * canvas.width; y = canvas.height + 50; }
+            else { x = -50; y = Math.random() * canvas.height; }
+            enemies.push(new Enemy(x, y, Math.floor(kills/10)));
+        }
+
+        function spawnPowerUp(x, y) {
+            const types = ['RAPID_FIRE', 'SHIELD', 'SPEED'];
+            powerUps.push(new PowerUp(x, y, types[Math.floor(Math.random() * types.length)]));
+        }
+
+        function applyPowerUp(type) {
+            if (type === 'RAPID_FIRE') player.activePowerUps.rapidFire = 400;
+            if (type === 'SPEED') player.activePowerUps.speed = 400;
+            if (type === 'SHIELD') {
+                player.hp = Math.min(100, player.hp + 20);
+                document.getElementById('hpBar').style.width = `${player.hp}%`;
+            }
+        }
+
+        function updateBossUI(boss) {
+            const p = (boss.hp / boss.maxHp) * 100;
+            document.getElementById('bossHpBar').style.width = `${p}%`;
+            document.getElementById('bossHpPercent').innerText = `${Math.ceil(p)}%`;
+        }
+
+        function defeatBoss(index) {
+            createExplosion(enemies[index].pos.x, enemies[index].pos.y, '#ff0000', 50);
+            enemies.splice(index, 1);
+            activeBoss = null;
+            kills++; // Evita bucle infinito del % 50
+            document.getElementById('bossHUD').classList.replace('opacity-100', 'opacity-0');
+            for(let i=0; i<3; i++) spawnPowerUp(player.pos.x + (Math.random()*60-30), player.pos.y + (Math.random()*60-30));
+        }
+
+        function updateStats() {
+            document.getElementById('killsLabel').innerText = `Bajas: ${kills}`;
+            document.getElementById('levelLabel').innerText = `LVL ${Math.floor(kills/10) + 1}`;
+        }
+
+        function gameOver() {
+            isRunning = false;
+            createExplosion(player.pos.x, player.pos.y, player.color, 40);
+            document.getElementById('gameOverMenu').classList.remove('hidden');
+            document.getElementById('finalStats').innerText = `Bajas: ${kills} | Nivel: ${Math.floor(kills/10) + 1}`;
+        }
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
