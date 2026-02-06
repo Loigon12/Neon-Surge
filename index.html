@@ -3,20 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grid Breach | Scavenger Edition</title>
+    <title>Grid Breach | Ultimate Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;700&display=swap');
         body { font-family: 'Space+Grotesk', sans-serif; background: #020617; overflow: hidden; margin: 0; }
         canvas { display: block; }
-        .text-outline { -webkit-text-stroke: 1px rgba(6, 182, 212, 0.5); color: transparent; }
-        /* Clase para resaltar el arma que acabamos de recoger */
         .weapon-active { border-color: #06b6d4; background: rgba(6, 182, 212, 0.3); box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); color: white; }
+        .text-outline { -webkit-text-stroke: 1px rgba(6, 182, 212, 0.5); color: transparent; }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
-
-    <div id="hud" class="fixed top-0 w-full p-6 flex justify-between items-start z-20 pointer-events-none hidden">
+<div id="hud" class="fixed top-0 w-full p-6 flex justify-between items-start z-20 pointer-events-none hidden">
         <div class="flex flex-col gap-4">
             <div class="bg-slate-900/80 p-4 rounded-xl border border-cyan-500/20 backdrop-blur-xl pointer-events-auto">
                 <p class="text-cyan-400 text-[10px] font-bold uppercase tracking-[0.3em] mb-1">Integridad del Sistema</p>
@@ -25,21 +23,20 @@
                 </div>
             </div>
             <div class="flex flex-col gap-1 pointer-events-auto">
-                <p class="text-slate-500 text-[8px] font-bold uppercase tracking-widest ml-1">Arma en Uso:</p>
                 <div class="flex gap-2">
-                    <div id="wep-1" class="px-3 py-1 bg-slate-900/50 border border-white/5 text-[10px] text-slate-500 rounded transition-all">PLASMA</div>
-                    <div id="wep-2" class="px-3 py-1 bg-slate-900/50 border border-white/5 text-[10px] text-slate-500 rounded transition-all">SPREAD</div>
-                    <div id="wep-3" class="px-3 py-1 bg-slate-900/50 border border-white/5 text-[10px] text-slate-500 rounded transition-all">RAPID</div>
+                    <div id="wep-1" class="px-3 py-1 bg-slate-900/50 border border-white/5 text-[10px] text-slate-500 rounded transition-all">NORMAL</div>
+                    <div id="wep-2" class="px-3 py-1 bg-slate-900/50 border border-white/5 text-[10px] text-slate-500 rounded transition-all">ESCOPETA</div>
+                    <div id="wep-3" class="px-3 py-1 bg-slate-900/50 border border-white/5 text-[10px] text-slate-500 rounded transition-all">METRALLETA</div>
                 </div>
             </div>
         </div>
 
         <div class="flex flex-col items-end gap-2 pointer-events-auto">
-            <button onclick="togglePause()" class="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-all group">
-                <svg id="pauseIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+            <button onclick="togglePause()" class="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-all">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
             </button>
             <div class="text-right">
-                <p id="levelLabel" class="text-white text-4xl font-black italic leading-none">LVL 1</p>
+                <p id="levelLabel" class="text-white text-4xl font-black italic">LVL 1</p>
                 <p id="killsLabel" class="text-cyan-500/60 text-xs font-bold uppercase">Bajas: 0</p>
             </div>
         </div>
@@ -47,59 +44,73 @@
 
     <div id="pauseMenu" class="fixed inset-0 bg-slate-950/60 backdrop-blur-md flex items-center justify-center z-[100] hidden">
         <div class="text-center p-12 border border-cyan-500/30 rounded-3xl bg-slate-900/80">
-            <h2 class="text-5xl font-black text-white mb-2 italic tracking-tighter">SISTEMA EN PAUSA</h2>
-            <p class="text-cyan-500/50 text-[10px] tracking-[0.3em] mb-8 uppercase">Recoge bolitas de colores para cambiar de arma</p>
-            <button onclick="togglePause()" class="px-12 py-4 bg-cyan-500 hover:bg-white text-black font-bold text-sm uppercase tracking-widest transition-all">
-                Reanudar Protocolo
-            </button>
+            <h2 class="text-5xl font-black text-white mb-8 italic">PAUSA</h2>
+            <button onclick="togglePause()" class="px-12 py-4 bg-cyan-500 text-black font-bold uppercase tracking-widest">Reanudar</button>
         </div>
     </div>
 
-    <div id="bossHUD" class="fixed top-24 left-1/2 -translate-x-1/2 w-full max-w-xl px-4 transition-all duration-500 opacity-0 pointer-events-none z-20">
-        <div class="flex justify-between items-end mb-1"><span class="text-red-500 font-black italic">ANOMALÍA CRÍTICA</span><span id="bossHpPercent" class="text-red-400 text-xs font-mono">100%</span></div>
-        <div class="h-2 bg-slate-900 border border-red-900/50 rounded-full overflow-hidden"><div id="bossHpBar" class="h-full bg-red-600 w-full transition-all duration-100"></div></div>
+     <div id="bossHUD" class="fixed top-24 left-1/2 -translate-x-1/2 w-full max-w-xl px-4 transition-all duration-500 opacity-0 pointer-events-none z-20">
+        <div class="flex justify-between items-end mb-1">
+            <span class="text-red-500 font-black tracking-tighter text-lg italic">ANOMALÍA: CORE_OVERLOAD</span>
+            <span id="bossHpPercent" class="text-red-400 text-xs font-mono">100%</span>
+        </div>
+        <div class="h-2 bg-slate-900 border border-red-900/50 rounded-full overflow-hidden shadow-[0_0_20px_rgba(239,68,68,0.2)]">
+            <div id="bossHpBar" class="h-full bg-red-600 w-full transition-all duration-100"></div>
+        </div>
     </div>
 
-    <div id="menu" class="fixed inset-0 bg-slate-950 flex items-center justify-center z-50">
+     <div id="menu" class="fixed inset-0 bg-slate-950 flex items-center justify-center z-50">
         <div class="text-center p-8 border border-white/5 rounded-3xl bg-slate-900/20 backdrop-blur-sm">
             <h1 class="text-7xl font-black text-white mb-2 tracking-tighter">GRID <span class="text-outline">BREACH</span></h1>
-            <p class="text-slate-500 mb-8 max-w-sm mx-auto uppercase text-[10px] tracking-[0.2em]">Recoge los núcleos de energía para mejorar tu armamento</p>
-            <button onclick="initGame()" class="px-12 py-4 bg-cyan-500 hover:bg-white text-black font-bold text-sm uppercase tracking-widest transition-all shadow-[0_0_30px_rgba(6,182,212,0.3)]">
+            <p class="text-slate-500 mb-8 max-w-sm mx-auto uppercase text-[10px] tracking-[0.2em]">Protocolo de limpieza de datos activo</p>
+            <button onclick="initGame()" class="px-12 py-4 bg-cyan-500 hover:bg-white text-black font-bold text-sm uppercase tracking-widest transition-all transform hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(6,182,212,0.3)]">
                 Iniciar Transmisión
             </button>
         </div>
     </div>
-
-    <div id="gameOverMenu" class="fixed inset-0 bg-slate-950/90 flex items-center justify-center z-50 hidden">
+   <div id="gameOverMenu" class="fixed inset-0 bg-slate-950/90 flex items-center justify-center z-50 hidden">
         <div class="text-center p-12 border border-red-500/20 rounded-3xl bg-slate-900/40 backdrop-blur-md">
             <h2 class="text-6xl font-black text-red-500 mb-2 italic tracking-tighter">SISTEMA CORRUPTO</h2>
             <p id="finalStats" class="text-slate-400 mb-8 uppercase text-xs tracking-[0.3em]"></p>
-            <button onclick="initGame()" class="px-12 py-4 bg-red-600 hover:bg-white text-white hover:text-black font-bold text-sm uppercase tracking-widest transition-all">Reiniciar</button>
+            <button onclick="initGame()" class="px-12 py-4 bg-red-600 hover:bg-white text-white hover:text-black font-bold text-sm uppercase tracking-widest transition-all transform hover:scale-105 active:scale-95">
+                Reiniciar Protocolo
+            </button>
         </div>
     </div>
 
     <canvas id="mainCanvas"></canvas>
 
-    <script>
-        // --- UTILIDADES ---
+ <script>
+        /**
+         * CLASES BASE
+         */
         class Vector {
             constructor(x, y) { this.x = x; this.y = y; }
             add(v) { this.x += v.x; this.y += v.y; return this; }
             sub(v) { return new Vector(this.x - v.x, this.y - v.y); }
             mag() { return Math.sqrt(this.x**2 + this.y**2); }
-            normalize() { const m = this.mag(); return m > 0 ? new Vector(this.x / m, this.y / m) : new Vector(0, 0); }
+            normalize() {
+                const m = this.mag();
+                return m > 0 ? new Vector(this.x / m, this.y / m) : new Vector(0, 0);
+            }
             rotate(angle) {
                 const cos = Math.cos(angle); const sin = Math.sin(angle);
                 return new Vector(this.x * cos - this.y * sin, this.x * sin + this.y * cos);
             }
         }
 
-        // --- CLASES DEL JUEGO ---
         class Entity {
-            constructor(x, y, radius, color) { this.pos = new Vector(x, y); this.radius = radius; this.color = color; }
+            constructor(x, y, radius, color) {
+                this.pos = new Vector(x, y);
+                this.radius = radius;
+                this.color = color;
+            }
             draw(ctx) {
-                ctx.beginPath(); ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = this.color; ctx.fill(); ctx.closePath();
+                ctx.beginPath();
+                ctx.arc(this.pos.x, this.pos.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.closePath();
             }
         }
 
@@ -109,87 +120,119 @@
                 this.hp = 100;
                 this.speed = 5;
                 this.keys = {};
-                this.activePowerUps = { rapidFire: 0, speed: 0 };
+                this.activePowerUps = { speed: 0 };
+                this.currentWeapon = 1; 
                 this.isShooting = false;
-                this.currentWeapon = 1; // El arma inicial es Plasma
             }
             update() {
                 const currentSpeed = this.activePowerUps.speed > 0 ? this.speed * 1.6 : this.speed;
                 let move = new Vector(0, 0);
-                if (this.keys['w']) move.y -= 1; if (this.keys['s']) move.y += 1;
-                if (this.keys['a']) move.x -= 1; if (this.keys['d']) move.x += 1;
-                move = move.normalize();
-                this.pos.x += move.x * currentSpeed; this.pos.y += move.y * currentSpeed;
+                if (this.keys['w']) move.y -= 1;
+                if (this.keys['s']) move.y += 1;
+                if (this.keys['a']) move.x -= 1;
+                if (this.keys['d']) move.x += 1;
                 
-                if (this.activePowerUps.rapidFire > 0) this.activePowerUps.rapidFire--;
-                if (this.activePowerUps.speed > 0) this.activePowerUps.speed--;
+                move = move.normalize();
+                this.pos.x += move.x * currentSpeed;
+                this.pos.y += move.y * currentSpeed;
 
+                if (this.activePowerUps.speed > 0) this.activePowerUps.speed--;
+                
                 this.pos.x = Math.max(this.radius, Math.min(window.innerWidth - this.radius, this.pos.x));
                 this.pos.y = Math.max(this.radius, Math.min(window.innerHeight - this.radius, this.pos.y));
             }
         }
 
-        // --- SISTEMA DE POWERUPS (BOLITAS DE COLORES) ---
-        class PowerUp extends Entity {
-            constructor(x, y, type) {
-                // Definimos colores específicos para cada arma y buff
-                const config = {
-                    'W_PLASMA': { color: '#06b6d4', r: 10 }, // Cian
-                    'W_SPREAD': { color: '#a855f7', r: 10 }, // Morado
-                    'W_RAPID':  { color: '#eab308', r: 10 }, // Amarillo
-                    'SHIELD':   { color: '#ef4444', r: 8 },  // Rojo
-                    'SPEED':    { color: '#22c55e', r: 8 }   // Verde
-                };
-                super(x, y, config[type].r, config[type].color);
-                this.type = type;
+        class Enemy extends Entity {
+            constructor(x, y, level) {
+                super(x, y, 10 + Math.random() * 5, '#f43f5e');
+                this.speed = 1.8 + (level * 0.15);
             }
-            draw(ctx) {
-                // Brillo dinámico para que las bolitas resalten
-                ctx.shadowBlur = 20; ctx.shadowColor = this.color;
-                super.draw(ctx);
-                ctx.shadowBlur = 0;
-                // Dibujamos un pequeño núcleo blanco para que parezca energía
-                ctx.fillStyle = 'white';
-                ctx.beginPath(); ctx.arc(this.pos.x, this.pos.y, this.radius/2, 0, Math.PI*2); ctx.fill();
+            update(target) {
+                const dir = target.pos.sub(this.pos).normalize();
+                this.pos.x += dir.x * this.speed;
+                this.pos.y += dir.y * this.speed;
             }
         }
 
-        // (Resto de clases: Enemy, Boss, Projectile, Particle se mantienen con la lógica anterior)
-        class Enemy extends Entity {
-            constructor(x, y, level) { super(x, y, 10 + Math.random() * 5, '#f43f5e'); this.speed = 1.8 + (level * 0.15); }
-            update(target) { const dir = target.pos.sub(this.pos).normalize(); this.pos.x += dir.x * this.speed; this.pos.y += dir.y * this.speed; }
+        // Definido antes del loop para evitar ReferenceError
+        class Boss extends Enemy {
+            constructor(x, y) {
+                super(x, y, 0);
+                this.radius = 50;
+                this.maxHp = 150;
+                this.hp = this.maxHp;
+                this.isBoss = true;
+                this.speed = 1.2;
+            }
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.pos.x, this.pos.y);
+                ctx.rotate(Date.now() * 0.003);
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(-this.radius, -this.radius, this.radius*2, this.radius*2);
+                ctx.restore();
+                super.draw(ctx);
+            }
         }
 
         class Projectile extends Entity {
-            constructor(x, y, velocityVector, isSuper) { super(x, y, isSuper ? 6 : 3, isSuper ? '#fbbf24' : '#fff'); this.velocity = velocityVector; }
+            constructor(x, y, velocityVector, isSuper) {
+                super(x, y, isSuper ? 6 : 3, isSuper ? '#fbbf24' : '#fff');
+                this.velocity = velocityVector;
+            }
             update() { this.pos.add(this.velocity); }
         }
 
         class Particle extends Entity {
-            constructor(x, y, color) { super(x, y, Math.random() * 3, color); this.velocity = new Vector((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8); this.alpha = 1; }
-            update() { this.pos.add(this.velocity); this.alpha -= 0.02; }
-            draw(ctx) { ctx.save(); ctx.globalAlpha = this.alpha; super.draw(ctx); ctx.restore(); }
+            constructor(x, y, color) {
+                super(x, y, Math.random() * 3, color);
+                this.velocity = new Vector((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8);
+                this.alpha = 1;
+            }
+            update() {
+                this.pos.add(this.velocity);
+                this.alpha -= 0.04;
+            }
+            draw(ctx) {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                super.draw(ctx);
+                ctx.restore();
+            }
         }
 
-        // --- VARIABLES DE ESTADO ---
+        class PowerUp extends Entity {
+            constructor(x, y, type) {
+                const config = {
+                    'W_NORMAL': '#ef4444', 'W_ESCOPETA': '#a855f7', 
+                    'W_METRALLETA': '#eab308', 'SALUD': '#06b6d4' , 'VELOCIDAD': '#22c55e'
+                };
+                super(x, y, 10, config[type]);
+                this.type = type;
+            }
+            draw(ctx) {
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = this.color;
+                super.draw(ctx);
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        /**
+         * LÓGICA DEL MOTOR
+         */
         const canvas = document.getElementById('mainCanvas');
         const ctx = canvas.getContext('2d');
-        let player, enemies, projectiles, powerUps, particles, kills, isRunning, isPaused, shake, activeBoss, lastFire;
+        // Inicializados con valores seguros
+        let player = null, enemies = [], projectiles = [], powerUps = [], particles = [], kills = 0, isRunning = false, isPaused = false, shake = 0, activeBoss = null, lastFire = 0;
 
-        /**
-         * FUNCIÓN DE PAUSA: Detiene el tiempo en el juego.
-         */
-        function togglePause() {
-            if (!isRunning) return;
-            isPaused = !isPaused;
-            document.getElementById('pauseMenu').classList.toggle('hidden', !isPaused);
-        }
+        const mousePos = { x: 0, y: 0 };
 
-        /**
-         * INICIO DEL JUEGO
-         */
         function initGame() {
-            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
             player = new Player();
             enemies = []; projectiles = []; powerUps = []; particles = [];
             kills = 0; shake = 0; lastFire = 0; activeBoss = null;
@@ -197,138 +240,106 @@
             
             document.getElementById('menu').style.display = 'none';
             document.getElementById('gameOverMenu').classList.add('hidden');
+            const bossHUD = document.getElementById('bossHUD');
+            if(bossHUD) bossHUD.classList.replace('opacity-100', 'opacity-0');
             document.getElementById('hud').classList.remove('hidden');
+            document.getElementById('hpBar').style.width = '100%';
             
-            // Forzar actualización visual del arma inicial
             updateWeaponUI(1);
             updateStats();
             requestAnimationFrame(gameLoop);
         }
 
-        /**
-         * SPAWN DE POWERUPS: Ahora incluye las armas en el pool de drops.
-         */
-        function spawnPowerUp(x, y) {
-            const types = ['W_PLASMA', 'W_SPREAD', 'W_RAPID', 'SHIELD', 'SPEED'];
-            const randomType = types[Math.floor(Math.random() * types.length)];
-            powerUps.push(new PowerUp(x, y, randomType));
-        }
-
-        /**
-         * APLICACIÓN DE MEJORAS: Aquí se gestiona el cambio de arma al tocar la bolita.
-         */
-        function applyPowerUp(type) {
-            // Lógica de Armas
-            if (type === 'W_PLASMA') { player.currentWeapon = 1; updateWeaponUI(1); }
-            if (type === 'W_SPREAD') { player.currentWeapon = 2; updateWeaponUI(2); }
-            if (type === 'W_RAPID')  { player.currentWeapon = 3; updateWeaponUI(3); }
-            
-            // Lógica de Buffs
-            if (type === 'SPEED') player.activePowerUps.speed = 400;
-            if (type === 'SHIELD') {
-                player.hp = Math.min(100, player.hp + 25);
-                document.getElementById('hpBar').style.width = `${player.hp}%`;
-            }
-        }
-
-        /**
-         * ACTUALIZAR INTERFAZ DE ARMA: Resalta el arma actual en el HUD.
-         */
-        function updateWeaponUI(id) {
-            [1, 2, 3].forEach(n => {
-                const el = document.getElementById(`wep-${n}`);
-                if (n === id) el.classList.add('weapon-active');
-                else el.classList.remove('weapon-active');
-            });
-        }
-
-        /**
-         * LÓGICA DE DISPARO (Se mantiene igual, pero controlada por player.currentWeapon)
-         */
         function fireWeapon() {
+            if(!player) return;
             const now = Date.now();
-            const mult = player.activePowerUps.rapidFire > 0 ? 0.4 : 1;
             const dir = new Vector(mousePos.x - player.pos.x, mousePos.y - player.pos.y).normalize();
-            const bulletSpeed = 14;
-
-            if (player.currentWeapon === 1 && now - lastFire > 250 * mult) {
-                projectiles.push(new Projectile(player.pos.x, player.pos.y, new Vector(dir.x * bulletSpeed, dir.y * bulletSpeed), false));
+            
+            if (player.currentWeapon === 1 && now - lastFire > 250) {
+                projectiles.push(new Projectile(player.pos.x, player.pos.y, new Vector(dir.x * 14, dir.y * 14), false));
                 lastFire = now;
-            } 
-            else if (player.currentWeapon === 2 && now - lastFire > 600 * mult) {
+            } else if (player.currentWeapon === 2 && now - lastFire > 600) {
                 [-0.2, 0, 0.2].forEach(a => {
                     const rDir = dir.rotate(a);
-                    projectiles.push(new Projectile(player.pos.x, player.pos.y, new Vector(rDir.x * bulletSpeed, rDir.y * bulletSpeed), true));
+                    projectiles.push(new Projectile(player.pos.x, player.pos.y, new Vector(rDir.x * 14, rDir.y * 14), true));
                 });
-                lastFire = now; shake = 4;
-            }
-            else if (player.currentWeapon === 3 && now - lastFire > 100 * mult) {
-                projectiles.push(new Projectile(player.pos.x, player.pos.y, new Vector(dir.x * (bulletSpeed + 2), dir.y * (bulletSpeed + 2)), false));
+                lastFire = now; shake = 5;
+            } else if (player.currentWeapon === 3 && now - lastFire > 100) {
+                projectiles.push(new Projectile(player.pos.x, player.pos.y, new Vector(dir.x * 16, dir.y * 16), false));
                 lastFire = now;
             }
         }
 
-        // --- INPUTS (Se eliminan los números 1, 2, 3) ---
-        const mousePos = { x: 0, y: 0 };
+        // CORRECCIÓN: Validación de existencia de player en los eventos
         window.addEventListener('mousemove', (e) => { mousePos.x = e.clientX; mousePos.y = e.clientY; });
-        window.addEventListener('mousedown', () => { if(!isPaused) player.isShooting = true });
-        window.addEventListener('mouseup', () => player.isShooting = false);
+        window.addEventListener('mousedown', () => { if(player && !isPaused) player.isShooting = true; });
+        window.addEventListener('mouseup', () => { if(player) player.isShooting = false; });
         window.addEventListener('keydown', (e) => {
-            player.keys[e.key.toLowerCase()] = true;
+            if(player) player.keys[e.key.toLowerCase()] = true;
             if (e.key.toLowerCase() === 'p' || e.key === 'Escape') togglePause();
         });
-        window.addEventListener('keyup', (e) => player.keys[e.key.toLowerCase()] = false);
+        window.addEventListener('keyup', (e) => { if(player) player.keys[e.key.toLowerCase()] = false; });
 
-        // --- LOOP PRINCIPAL ---
-        function gameLoop() {
+        function createExplosion(x, y, color, count = 10) {
+            for(let i=0; i<count; i++) particles.push(new Particle(x, y, color));
+        }
+
+        function togglePause() {
             if (!isRunning) return;
+            isPaused = !isPaused;
+            const pauseMenu = document.getElementById('pauseMenu');
+            if(pauseMenu) pauseMenu.classList.toggle('hidden', !isPaused);
+        }
+
+        function gameLoop() {
+            if (!isRunning || !player) return;
             if (isPaused) { requestAnimationFrame(gameLoop); return; }
 
             ctx.save();
-            if (shake > 0) { ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2); shake *= 0.9; }
+            if (shake > 0) {
+                ctx.translate(Math.random() * shake - shake/2, Math.random() * shake - shake/2);
+                shake *= 0.9;
+            }
 
-            ctx.fillStyle = 'rgba(2, 6, 23, 0.4)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(2, 6, 23, 0.4)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             if (player.isShooting) fireWeapon();
+
             if (Math.random() < 0.03 && enemies.length < 40 && !activeBoss) spawnEnemy();
             
-            // Spawn Jefe cada 50 bajas
             if (kills > 0 && kills % 50 === 0 && !activeBoss) {
                 activeBoss = new Boss(canvas.width/2, -50);
                 enemies.push(activeBoss);
-                document.getElementById('bossHUD').classList.replace('opacity-0', 'opacity-100');
+                const bossHUD = document.getElementById('bossHUD');
+                if(bossHUD) bossHUD.classList.replace('opacity-0', 'opacity-100');
             }
 
-            // Actualizar Player
-            player.update(); player.draw(ctx);
+            player.update();
+            player.draw(ctx);
 
-            // Partículas
             particles.forEach((p, i) => {
                 p.update(); p.draw(ctx);
                 if (p.alpha <= 0) particles.splice(i, 1);
             });
 
-            // PowerUps (Colisiones con el jugador)
             powerUps.forEach((pu, i) => {
                 pu.draw(ctx);
                 if (pu.pos.sub(player.pos).mag() < pu.radius + player.radius) {
                     applyPowerUp(pu.type);
-                    createExplosion(pu.pos.x, pu.pos.y, pu.color, 15);
                     powerUps.splice(i, 1);
                 }
             });
 
-            // Proyectiles
             projectiles.forEach((p, pi) => {
                 p.update(); p.draw(ctx);
                 if (p.pos.x < 0 || p.pos.x > canvas.width || p.pos.y < 0 || p.pos.y > canvas.height) projectiles.splice(pi, 1);
             });
 
-            // Enemigos
             enemies.forEach((en, ei) => {
-                en.update(player); en.draw(ctx);
-                
-                // Daño al jugador
+                en.update(player);
+                en.draw(ctx);
+
                 if (en.pos.sub(player.pos).mag() < en.radius + player.radius) {
                     player.hp -= en.isBoss ? 1 : 0.4;
                     shake = 8;
@@ -336,18 +347,20 @@
                     if (player.hp <= 0) gameOver();
                 }
 
-                // Impacto de balas
                 projectiles.forEach((p, pi) => {
                     if (en.pos.sub(p.pos).mag() < en.radius + p.radius) {
                         createExplosion(p.pos.x, p.pos.y, en.color, 5);
                         projectiles.splice(pi, 1);
                         if (en.isBoss) {
-                            en.hp -= 2; shake = 12; updateBossUI(en);
+                            en.hp -= 2;
+                            shake = 12;
+                            updateBossUI(en);
                             if (en.hp <= 0) defeatBoss(ei);
                         } else {
-                            // Probabilidad de soltar bolita de color
-                            if (Math.random() < 0.18) spawnPowerUp(en.pos.x, en.pos.y);
-                            enemies.splice(ei, 1); kills++; updateStats();
+                            if (Math.random() < 0.15) spawnPowerUp(en.pos.x, en.pos.y);
+                            enemies.splice(ei, 1);
+                            kills++;
+                            updateStats();
                         }
                     }
                 });
@@ -357,7 +370,6 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // --- FUNCIONES SOPORTE ---
         function spawnEnemy() {
             const side = Math.floor(Math.random() * 4);
             let x, y;
@@ -368,8 +380,28 @@
             enemies.push(new Enemy(x, y, Math.floor(kills/10)));
         }
 
-        function createExplosion(x, y, color, count) {
-            for(let i=0; i<count; i++) particles.push(new Particle(x, y, color));
+        function spawnPowerUp(x, y) {
+            const t = ['W_NORMAL', 'W-ESCOPETA', 'W_METRALLETA', 'SALUD', 'VELOCIDAD'];
+            powerUps.push(new PowerUp(x, y, t[Math.floor(Math.random()*t.length)]));
+        }
+
+        function applyPowerUp(type) {
+            if(!player) return;
+            if (type === 'W_NORMAL') { player.currentWeapon = 1; updateWeaponUI(1); }
+            if (type === 'W-ESCOPETA') { player.currentWeapon = 2; updateWeaponUI(2); }
+            if (type === 'W_METRALLETA')  { player.currentWeapon = 3; updateWeaponUI(3); }
+            if (type === 'VELOCIDAD') player.activePowerUps.speed = 400;
+            if (type === 'SALUD') {
+                player.hp = Math.min(100, player.hp + 20);
+                document.getElementById('hpBar').style.width = `${player.hp}%`;
+            }
+        }
+
+        function updateWeaponUI(id) { 
+            [1,2,3].forEach(n => {
+                const el = document.getElementById(`wep-${n}`);
+                if(el) el.className = n===id ? 'weapon-active px-3 py-1 border rounded text-[10px]' : 'px-3 py-1 border border-white/5 rounded text-[10px] text-slate-500';
+            }); 
         }
 
         function updateBossUI(boss) {
@@ -380,24 +412,30 @@
 
         function defeatBoss(index) {
             createExplosion(enemies[index].pos.x, enemies[index].pos.y, '#ff0000', 50);
-            enemies.splice(index, 1); activeBoss = null; kills++;
+            enemies.splice(index, 1);
+            activeBoss = null;
+            kills++; // Evita bucle infinito del % 50
             document.getElementById('bossHUD').classList.replace('opacity-100', 'opacity-0');
-            // Al morir el jefe siempre suelta una lluvia de powerups
-            for(let i=0; i<5; i++) spawnPowerUp(player.pos.x + (Math.random()*100-50), player.pos.y + (Math.random()*100-50));
+            for(let i=0; i<3; i++) spawnPowerUp(player.pos.x + (Math.random()*60-30), player.pos.y + (Math.random()*60-30));
         }
-
         function updateStats() {
-            document.getElementById('killsLabel').innerText = `Bajas: ${kills}`;
-            document.getElementById('levelLabel').innerText = `LVL ${Math.floor(kills/10) + 1}`;
+            const kl = document.getElementById('killsLabel');
+            const ll = document.getElementById('levelLabel');
+            if(kl) kl.innerText = `Bajas: ${kills}`;
+            if(ll) ll.innerText = `LVL ${Math.floor(kills/10) + 1}`;
         }
 
-        function gameOver() {
-            isRunning = false; createExplosion(player.pos.x, player.pos.y, player.color, 40);
+          function gameOver() {
+            isRunning = false;
+            createExplosion(player.pos.x, player.pos.y, player.color, 40);
             document.getElementById('gameOverMenu').classList.remove('hidden');
             document.getElementById('finalStats').innerText = `Bajas: ${kills} | Nivel: ${Math.floor(kills/10) + 1}`;
         }
 
-        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
     </script>
 </body>
 </html>
